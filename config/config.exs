@@ -20,4 +20,11 @@
 # and its dependencies with the aid of the Mix.Config module.
 import Config
 
+
+config :astarte_data_access, ecto_repos: [Astarte.DataAccess.Repo]
+
+config :astarte_data_access, Astarte.DataAccess.Repo,
+  [keyspace: "astarte",
+  sync_connect: 5000] ++ Astarte.DataAccess.Config.xandra_options!()
+
 import_config "#{config_env()}.exs"
