@@ -1,4 +1,4 @@
-defmodule AstarteDataAccess.Realms.Interfaces do
+defmodule AstarteDataAccess.Realms.Interface do
   use Ecto.Schema
 
   @primary_key false

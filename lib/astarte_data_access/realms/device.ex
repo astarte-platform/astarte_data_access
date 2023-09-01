@@ -1,4 +1,4 @@
-defmodule AstarteDataAccess.Realms.Devices do
+defmodule AstarteDataAccess.Realms.Device do
   use Ecto.Schema
 
   @primary_key {:device_id, :binary_id, autogenerate: false}

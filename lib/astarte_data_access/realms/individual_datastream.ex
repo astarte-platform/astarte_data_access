@@ -1,14 +1,15 @@
-defmodule AstarteDataAccess.Realms.IndividualProperties do
+defmodule AstarteDataAccess.Realms.IndividualDatastream do
   use Ecto.Schema
 
   @primary_key false
-  schema "individual_properties" do
+  schema "individual_datastreams" do
     field :device_id, :binary_id, primary_key: true
     field :interface_id, :binary_id, primary_key: true
     field :endpoint_id, :binary_id, primary_key: true
     field :path, :string, primary_key: true
-    field :reception_timestamp, :utc_datetime_usec
-    field :reception_timestamp_submillis, :integer
+    field :value_timestamp, :utc_datetime_usec, primary_key: true
+    field :reception_timestamp, :utc_datetime_usec, primary_key: true
+    field :reception_timestamp_submillis, :integer, primary_key: true
     field :double_value, :float
     field :integer_value, :integer
     field :boolean_value, :boolean
