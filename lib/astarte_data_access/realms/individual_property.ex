@@ -1,4 +1,4 @@
-defmodule AstarteDataAccess.Realms.IndividualProperty do
+defmodule Astarte.DataAccess.Realms.IndividualProperty do
   use Ecto.Schema
 
   @primary_key false

@@ -1,4 +1,4 @@
-defmodule AstarteDataAccess.Realms.IndividualDatastream do
+defmodule Astarte.DataAccess.Realms.IndividualDatastream do
   use Ecto.Schema
 
   @primary_key false

@@ -1,4 +1,4 @@
-defmodule AstarteDataAccess.Realms.KvStore do
+defmodule Astarte.DataAccess.Realms.KvStore do
   use Ecto.Schema
 
   @primary_key false

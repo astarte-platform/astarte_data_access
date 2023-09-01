@@ -1,4 +1,4 @@
-defmodule AstarteDataAccess.Realms.Device do
+defmodule Astarte.DataAccess.Realms.Device do
   use Ecto.Schema
   import Ecto.Changeset
 
