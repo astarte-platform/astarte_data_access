@@ -158,6 +158,7 @@ defmodule Astarte.DataAccess.Config do
   @spec xandra_options!() :: Xandra.start_options()
   def xandra_options! do
     [
+      name: :astarte_data_access_xandra,
       nodes: xandra_nodes!(),
       authentication: xandra_authentication_options!(),
       pool_size: pool_size!(),

@@ -28,7 +28,6 @@ defmodule Astarte.DataAccess do
   def init(init_arg) do
     xandra_options =
       Keyword.fetch!(init_arg, :xandra_options)
-      |> Keyword.put(:name, :astarte_data_access_xandra)
       # TODO move to string keys
       |> Keyword.put(:atom_keys, true)
 
