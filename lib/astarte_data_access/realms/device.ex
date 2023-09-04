@@ -4,7 +4,7 @@ defmodule Astarte.DataAccess.Realms.Device do
 
   alias Astarte.Core.Device
 
-  @primary_key {:device_id, :binary_id, autogenerate: false}
+  @primary_key {:device_id, Ecto.UUID, autogenerate: false}
   schema "devices" do
     field :encoded_device_id, :binary, virtual: true
     field :aliases, Exandra.Map, key: :ascii, value: :string

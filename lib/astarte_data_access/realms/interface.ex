@@ -6,7 +6,7 @@ defmodule Astarte.DataAccess.Realms.Interface do
     field :name, :string, primary_key: true
     field :major_version, :integer, primary_key: true
     field :minor_version, :integer
-    field :interface_id, :binary_id
+    field :interface_id, Ecto.UUID
     field :storage_type, :integer
     field :storage, :string
     field :type, :integer

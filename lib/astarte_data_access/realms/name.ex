@@ -5,6 +5,6 @@ defmodule Astarte.DataAccess.Realms.Name do
   schema "names" do
     field :object_name, :string, primary_key: true
     field :object_type, :integer, primary_key: true
-    field :object_uuid, :binary_id
+    field :object_uuid, Ecto.UUID
   end
 end

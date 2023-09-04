@@ -18,36 +18,43 @@
 
 defmodule Astarte.DataAccess.Mappings do
   alias Astarte.Core.Mapping
-  alias Astarte.DataAccess.XandraUtils
+  alias Astarte.DataAccess.Realms.Endpoint
   require Logger
+
+  import Ecto.Query
+  alias Astarte.DataAccess.Repo
+
+  @default_selection [
+    :endpoint,
+    :value_type,
+    :reliability,
+    :retention,
+    :database_retention_policy,
+    :database_retention_ttl,
+    :expiry,
+    :allow_unset,
+    :explicit_timestamp,
+    :endpoint_id,
+    :interface_id
+  ]
 
   @spec fetch_interface_mappings(String.t(), binary, keyword) ::
           {:ok, list(%Mapping{})} | {:error, atom}
   def fetch_interface_mappings(realm, interface_id, opts \\ []) do
-    XandraUtils.run(realm, &do_fetch_interface_mappings(&1, &2, interface_id, opts))
-  end
-
-  defp do_fetch_interface_mappings(conn, realm_name, interface_id, opts) do
-    include_docs =
+    selection =
       if Keyword.get(opts, :include_docs) do
-        ", doc, description"
+        @default_selection ++ [:doc, :description]
       else
-        ""
+        @default_selection
       end
 
-    statement = """
-    SELECT endpoint, value_type, reliability, retention, database_retention_policy,
-      database_retention_ttl, expiry, allow_unset, explicit_timestamp, endpoint_id,
-      interface_id #{include_docs}
-    FROM #{realm_name}.endpoints
-    WHERE interface_id=:interface_id
-    """
+    query = from Endpoint, where: [interface_id: ^interface_id], select: ^selection
 
-    with {:ok, %Xandra.Page{} = page} <-
-           XandraUtils.retrieve_page(conn, statement, %{interface_id: interface_id},
-             consistency: :quorum
-           ) do
-      to_mapping_list(page)
+    Repo.all(query, prefix: realm)
+    |> Enum.map(&Mapping.from_db_result!/1)
+    |> case do
+      [] -> {:error, :interface_not_found}
+      mappings -> {:ok, mappings}
     end
   end
 
@@ -60,13 +67,6 @@ defmodule Astarte.DataAccess.Mappings do
         end)
 
       {:ok, mappings_map}
-    end
-  end
-
-  defp to_mapping_list(page) do
-    case Enum.to_list(page) do
-      [] -> {:error, :interface_not_found}
-      mappings -> {:ok, Enum.map(mappings, &Mapping.from_db_result!/1)}
     end
   end
 end

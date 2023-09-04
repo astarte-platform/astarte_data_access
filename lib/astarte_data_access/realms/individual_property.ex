@@ -3,9 +3,9 @@ defmodule Astarte.DataAccess.Realms.IndividualProperty do
 
   @primary_key false
   schema "individual_properties" do
-    field :device_id, :binary_id, primary_key: true
-    field :interface_id, :binary_id, primary_key: true
-    field :endpoint_id, :binary_id, primary_key: true
+    field :device_id, Ecto.UUID, primary_key: true
+    field :interface_id, Ecto.UUID, primary_key: true
+    field :endpoint_id, Ecto.UUID, primary_key: true
     field :path, :string, primary_key: true
     field :reception_timestamp, :utc_datetime_usec
     field :reception_timestamp_submillis, :integer
