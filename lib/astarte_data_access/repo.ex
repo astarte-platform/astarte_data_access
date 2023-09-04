@@ -9,4 +9,32 @@ defmodule Astarte.DataAccess.Repo do
 
     {:ok, config}
   end
+
+  def fetch(queryable, id, opts \\ []) do
+    {error, opts} = Keyword.pop_first(opts, :error, :not_found)
+
+    case get(queryable, id, opts) do
+      nil -> {:error, error}
+      item -> {:ok, item}
+    end
+  end
+
+  def fetch_by(queryable, clauses, opts \\ []) do
+    {error, opts} = Keyword.pop_first(opts, :error, :not_found)
+
+    case get_by(queryable, clauses, opts) do
+      nil -> {:error, error}
+      item -> {:ok, item}
+    end
+  end
+
+  def fetch_one(queryable, opts \\ []) do
+    {error, opts} = Keyword.pop_first(opts, :error, :not_found)
+
+    case one(queryable, opts) do
+      nil -> {:error, error}
+      item -> {:ok, item}
+    end
+  end
+
 end
