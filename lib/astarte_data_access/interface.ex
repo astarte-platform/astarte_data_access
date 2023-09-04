@@ -19,7 +19,6 @@
 defmodule Astarte.DataAccess.Interface do
   require Logger
   alias Astarte.Core.InterfaceDescriptor
-  alias Astarte.DataAccess.XandraUtils
   alias Astarte.DataAccess.Repo
   alias Astarte.DataAccess.Realms.Interface
   import Ecto.Query
@@ -66,32 +65,10 @@ defmodule Astarte.DataAccess.Interface do
   @spec check_if_interface_exists(String.t(), String.t(), non_neg_integer) ::
           :ok | {:error, atom}
   def check_if_interface_exists(realm, interface_name, major_version) do
-    XandraUtils.run(
-      realm,
-      &do_check_if_interface_exists(&1, &2, interface_name, major_version)
-    )
-  end
-
-  defp do_check_if_interface_exists(conn, realm_name, interface_name, major_version) do
-    statement = """
-    SELECT COUNT(*)
-    FROM #{realm_name}.interfaces
-    WHERE name=:name AND major_version=:major_version
-    """
-
-    params = %{
-      name: interface_name,
-      major_version: major_version
-    }
-
-    with {:ok, %Xandra.Page{} = page} <- XandraUtils.retrieve_page(conn, statement, params) do
-      case Enum.to_list(page) do
-        [%{count: 1}] ->
-          :ok
-
-        [%{count: 0}] ->
-          {:error, :interface_not_found}
-      end
+    query = from(Interface, where: [name: ^interface_name, major_version: ^major_version])
+    case Repo.aggregate(query, :count, prefix: realm) do
+      1 -> :ok
+      0 -> {:error, :interface_not_found}
     end
   end
 end
