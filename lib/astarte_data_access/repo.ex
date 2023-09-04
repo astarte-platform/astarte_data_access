@@ -36,5 +36,4 @@ defmodule Astarte.DataAccess.Repo do
       item -> {:ok, item}
     end
   end
-
 end

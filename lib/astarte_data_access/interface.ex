@@ -24,16 +24,30 @@ defmodule Astarte.DataAccess.Interface do
   alias Astarte.DataAccess.Realms.Interface
   import Ecto.Query
 
-  @interface_row_default_selector [:name, :major_version, :minor_version, :interface_id, :type, :ownership, :aggregation, :storage, :storage_type, :automaton_transitions, :automaton_accepting_states]
+  @interface_row_default_selector [
+    :name,
+    :major_version,
+    :minor_version,
+    :interface_id,
+    :type,
+    :ownership,
+    :aggregation,
+    :storage,
+    :storage_type,
+    :automaton_transitions,
+    :automaton_accepting_states
+  ]
 
   @spec retrieve_interface_row(String.t(), String.t(), integer, keyword()) ::
           {:ok, keyword()} | {:error, atom}
   def retrieve_interface_row(realm, interface_name, major_version, opts \\ []) do
     query =
       from(Interface,
-      where: [name: ^interface_name, major_version: ^major_version])
+        where: [name: ^interface_name, major_version: ^major_version]
+      )
 
-    query = if opts[:include_docs], do: query, else: select(query, ^@interface_row_default_selector)
+    query =
+      if opts[:include_docs], do: query, else: select(query, ^@interface_row_default_selector)
 
     with {:ok, interface} <- Repo.fetch_one(query, error: :interface_not_found, prefix: realm) do
       {:ok, update_in(interface.interface_id, &Ecto.UUID.dump!/1)}
