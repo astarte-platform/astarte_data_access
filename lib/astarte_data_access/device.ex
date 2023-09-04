@@ -26,10 +26,9 @@ defmodule Astarte.DataAccess.Device do
           {:ok, integer} | {:error, atom}
   def interface_version(realm, device_id, interface_name) do
     query =
-      from(d in "devices",
+      from d in "devices",
         where: d.device_id == ^device_id,
         select: d.introspection
-      )
 
     with {:ok, introspection} <-
            Repo.fetch_one(query, prefix: realm, error: :device_not_found),

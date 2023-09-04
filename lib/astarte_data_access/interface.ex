@@ -41,9 +41,8 @@ defmodule Astarte.DataAccess.Interface do
           {:ok, keyword()} | {:error, atom}
   def retrieve_interface_row(realm, interface_name, major_version, opts \\ []) do
     query =
-      from(Interface,
+      from Interface,
         where: [name: ^interface_name, major_version: ^major_version]
-      )
 
     query =
       if opts[:include_docs], do: query, else: select(query, ^@interface_row_default_selector)
@@ -65,7 +64,8 @@ defmodule Astarte.DataAccess.Interface do
   @spec check_if_interface_exists(String.t(), String.t(), non_neg_integer) ::
           :ok | {:error, atom}
   def check_if_interface_exists(realm, interface_name, major_version) do
-    query = from(Interface, where: [name: ^interface_name, major_version: ^major_version])
+    query = from Interface, where: [name: ^interface_name, major_version: ^major_version]
+
     case Repo.aggregate(query, :count, prefix: realm) do
       1 -> :ok
       0 -> {:error, :interface_not_found}
