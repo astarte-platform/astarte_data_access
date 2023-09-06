@@ -182,11 +182,10 @@ defmodule Astarte.DataAccess.Data do
         select: [:datetime_value, :reception_timestamp, :reception_timestamp_submillis]
 
     with {:ok, last_update} <- Repo.fetch_one(query, error: :path_not_set) do
-      values = %{
-        value_timestamp: last_update.datetime_value |> DateTime.truncate(:millisecond),
-        reception_timestamp: IndividualProperty.reception(last_update)
-      }
-      {:ok, values}
+      value_timestamp = last_update.datetime_value |> DateTime.truncate(:millisecond)
+      reception_timestamp = IndividualProperty.reception(last_update)
+
+      {:ok, %{value_timestamp: value_timestamp, reception_timestamp: reception_timestamp}}
     end
   end
 end
