@@ -171,15 +171,8 @@ defmodule Astarte.DataAccess.Data do
       )
       when is_binary(device_id) and is_binary(path) do
     query =
-      from IndividualProperty,
-        prefix: ^realm,
-        where: [
-          device_id: ^device_id,
-          interface_id: ^interface_descriptor.interface_id,
-          endpoint_id: ^mapping.endpoint_id,
-          path: ^path
-        ],
-        select: [:datetime_value, :reception_timestamp, :reception_timestamp_submillis]
+      fetch_path(realm, device_id, interface_descriptor.interface_id, mapping.endpoint_id, path)
+      |> select([:datetime_value, :reception_timestamp, :reception_timestamp_submillis])
 
     with {:ok, last_update} <- Repo.fetch_one(query, error: :path_not_set) do
       value_timestamp = last_update.datetime_value |> DateTime.truncate(:millisecond)
@@ -187,5 +180,16 @@ defmodule Astarte.DataAccess.Data do
 
       {:ok, %{value_timestamp: value_timestamp, reception_timestamp: reception_timestamp}}
     end
+  end
+
+  defp fetch_path(realm, device_id, interface_id, endpoint_id, path) do
+    from IndividualProperty,
+      prefix: ^realm,
+      where: [
+        device_id: ^device_id,
+        interface_id: ^interface_id,
+        endpoint_id: ^endpoint_id,
+        path: ^path
+      ]
   end
 end
