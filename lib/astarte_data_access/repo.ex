@@ -2,6 +2,7 @@ defmodule Astarte.DataAccess.Repo do
   use Ecto.Repo, otp_app: :astarte_data_access, adapter: Exandra
   alias Astarte.DataAccess.Config
 
+  @impl Ecto.Repo
   def init(_context, config) do
     config =
       Config.xandra_options!()
