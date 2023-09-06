@@ -27,11 +27,12 @@ defmodule Astarte.DataAccess.Device do
   def interface_version(realm, device_id, interface_name) do
     query =
       from d in "devices",
+        prefix: ^realm,
         where: d.device_id == ^device_id,
         select: d.introspection
 
     with {:ok, introspection} <-
-           Repo.fetch_one(query, prefix: realm, error: :device_not_found),
+           Repo.fetch_one(query, error: :device_not_found),
          {:ok, major} <- retrieve_major(introspection, interface_name) do
       {:ok, major}
     end
