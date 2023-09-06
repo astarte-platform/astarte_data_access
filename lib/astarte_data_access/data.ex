@@ -105,51 +105,11 @@ defmodule Astarte.DataAccess.Data do
         path
       )
       when is_binary(device_id) and is_binary(path) do
-    XandraUtils.run(
-      realm,
-      &do_path_exists?(&1, &2, device_id, interface_descriptor, mapping, path)
-    )
-  end
-
-  defp do_path_exists?(conn, realm_name, device_id, interface_descriptor, mapping, path) do
-    # TODO: do not hardcode individual_properties here
-    statement = """
-    SELECT COUNT(*)
-    FROM #{realm_name}.#{@individual_properties_table}
-    WHERE device_id=:device_id AND interface_id=:interface_id
-      AND endpoint_id=:endpoint_id AND path=:path
-    """
-
-    params = %{
-      device_id: device_id,
-      interface_id: interface_descriptor.interface_id,
-      endpoint_id: mapping.endpoint_id,
-      path: path
-    }
-
-    with {:ok, %Xandra.Page{} = page} <-
-           XandraUtils.retrieve_page(conn, statement, params, consistency: :quorum),
-         {:ok, value} <- retrieve_path_count(page) do
-      case value do
-        0 ->
-          {:ok, false}
-
-        1 ->
-          {:ok, true}
-      end
-    end
-  end
-
-  defp retrieve_path_count(page) do
-    case Enum.to_list(page) do
-      [] ->
-        {:error, :property_not_set}
-
-      [%{count: nil}] ->
-        {:error, :undefined_property}
-
-      [%{count: value}] ->
-        {:ok, value}
+    fetch_path(realm, device_id, interface_descriptor.interface_id, mapping.endpoint_id, path)
+    |> Repo.aggregate(:count, consistency: :quorum)
+    |> case do
+      0 -> {:ok, false}
+      1 -> {:ok, true}
     end
   end
 
