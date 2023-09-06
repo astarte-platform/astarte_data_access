@@ -3,8 +3,8 @@ defmodule Astarte.DataAccess.Realms.Endpoint do
 
   @primary_key false
   schema "endpoints" do
-    field :interface_id, :binary_id, primary_key: true
-    field :endpoint_id, :binary_id, primary_key: true
+    field :interface_id, Ecto.UUID, primary_key: true
+    field :endpoint_id, Ecto.UUID, primary_key: true
     field :interface_name, :string
     field :interface_major_version, :integer
     field :interface_minor_version, :integer
