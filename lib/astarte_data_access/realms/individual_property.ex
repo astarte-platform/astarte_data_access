@@ -24,4 +24,9 @@ defmodule Astarte.DataAccess.Realms.IndividualProperty do
     field :binaryblobarray_value, {:array, :binary}
     field :datetimearray_value, {:array, :utc_datetime_usec}
   end
+
+  def reception(%__MODULE__{} = property) do
+    property.reception_timestamp
+    |> DateTime.add(property.reception_timestamp_submillis || 0 |> div(10), :microsecond)
+  end
 end
