@@ -51,7 +51,7 @@ defmodule Astarte.DataAccess.Mappings do
     query =
       from Endpoint, prefix: ^realm, where: [interface_id: ^interface_id], select: ^selection
 
-    Repo.all(query)
+    Repo.all(query, consistency: :quorum)
     |> Enum.map(&Mapping.from_db_result!/1)
     |> case do
       [] -> {:error, :interface_not_found}
