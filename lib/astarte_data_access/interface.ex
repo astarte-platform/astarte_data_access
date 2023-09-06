@@ -47,9 +47,7 @@ defmodule Astarte.DataAccess.Interface do
     query =
       if opts[:include_docs], do: query, else: select(query, ^@interface_row_default_selector)
 
-    with {:ok, interface} <- Repo.fetch_one(query, error: :interface_not_found, prefix: realm) do
-      {:ok, update_in(interface.interface_id, &Ecto.UUID.cast!/1)}
-    end
+    Repo.fetch_one(query, error: :interface_not_found, prefix: realm)
   end
 
   @spec fetch_interface_descriptor(String.t(), String.t(), non_neg_integer) ::

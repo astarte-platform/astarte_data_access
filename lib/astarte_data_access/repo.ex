@@ -36,4 +36,9 @@ defmodule Astarte.DataAccess.Repo do
       item -> {:ok, item}
     end
   end
+
+  @impl Ecto.Repo
+  def default_options(operation) do
+    [uuid_format: :binary, timestamp_format: :integer]
+  end
 end
