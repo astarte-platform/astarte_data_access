@@ -105,7 +105,7 @@ defmodule Astarte.DataAccess.Data do
         path
       )
       when is_binary(device_id) and is_binary(path) do
-    fetch_path(realm, device_id, interface_descriptor.interface_id, mapping.endpoint_id, path)
+    fetch(realm, device_id, interface_descriptor, mapping, path)
     |> Repo.aggregate(:count, consistency: :quorum)
     |> case do
       0 -> {:ok, false}
@@ -131,7 +131,7 @@ defmodule Astarte.DataAccess.Data do
       )
       when is_binary(device_id) and is_binary(path) do
     query =
-      fetch_path(realm, device_id, interface_descriptor.interface_id, mapping.endpoint_id, path)
+      fetch(realm, device_id, interface_descriptor, mapping, path)
       |> select([:datetime_value, :reception_timestamp, :reception_timestamp_submillis])
 
     with {:ok, last_update} <- Repo.fetch_one(query, error: :path_not_set) do
@@ -142,13 +142,13 @@ defmodule Astarte.DataAccess.Data do
     end
   end
 
-  defp fetch_path(realm, device_id, interface_id, endpoint_id, path) do
-    from IndividualProperty,
+  defp fetch(source \\ IndividualProperty, realm, device_id, interface_descriptor, mapping, path) do
+    from source,
       prefix: ^realm,
       where: [
         device_id: ^device_id,
-        interface_id: ^interface_id,
-        endpoint_id: ^endpoint_id,
+        interface_id: ^interface_descriptor.interface_id,
+        endpoint_id: ^mapping.endpoint_id,
         path: ^path
       ]
   end
