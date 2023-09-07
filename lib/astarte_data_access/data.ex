@@ -18,11 +18,14 @@
 
 defmodule Astarte.DataAccess.Data do
   require Logger
+  alias Astarte.DataAccess.Repo
+  alias Astarte.DataAccess.Realms.IndividualProperty
   alias Astarte.DataAccess.XandraUtils
   alias Astarte.Core.CQLUtils
   alias Astarte.Core.Device
   alias Astarte.Core.InterfaceDescriptor
   alias Astarte.Core.Mapping
+  import Ecto.Query
 
   @individual_properties_table "individual_properties"
 
@@ -42,48 +45,36 @@ defmodule Astarte.DataAccess.Data do
         path
       )
       when is_binary(device_id) and is_binary(path) do
-    XandraUtils.run(
-      realm,
-      &do_fetch_property(&1, &2, device_id, interface_descriptor, mapping, path)
-    )
-  end
+    # String.to_existing_atom doesn't work as... the atom doesn't exist
+    # Maybe CQLUtils could expose a `type_to_db_column_atom`?
+    column =
+      mapping.value_type
+      |> CQLUtils.type_to_db_column_name()
+      |> String.to_atom()
 
-  defp do_fetch_property(conn, realm_name, device_id, interface_descriptor, mapping, path) do
-    value_column = CQLUtils.type_to_db_column_name(mapping.value_type)
+    # FIXME: cassandra complains it doesn't know a "castAsUuid" function,
+    # but the ids are correctly casted as UUIDs in the query, which doesn't happen setting type to "string".
+    # Perhaps an exandra issue?
 
-    statement = """
-    SELECT #{value_column}
-    FROM #{realm_name}."#{interface_descriptor.storage}"
-    WHERE device_id=:device_id AND interface_id=:interface_id
-      AND endpoint_id=:endpoint_id AND path=:path
-    """
+    # TODO: add typing to fetch/6 and use that once this is sorted out
+    query =
+      from interface_descriptor.storage,
+        prefix: ^realm,
+        where: [
+          device_id: type(^device_id, Ecto.UUID),
+          interface_id: type(^interface_descriptor.interface_id, Ecto.UUID),
+          endpoint_id: type(^mapping.endpoint_id, Ecto.UUID),
+          path: type(^path, :string)
+        ],
+        select: [^column]
 
-    params = %{
-      device_id: device_id,
-      interface_id: interface_descriptor.interface_id,
-      endpoint_id: mapping.endpoint_id,
-      path: path
-    }
-
-    with {:ok, %Xandra.Page{} = page} <-
-           XandraUtils.retrieve_page(conn, statement, params, consistency: :quorum) do
-      retrieve_property_value(page, value_column)
-    end
-  end
-
-  defp retrieve_property_value(%Xandra.Page{} = page, value_column) do
-    value_atom = String.to_existing_atom(value_column)
-
-    case Enum.to_list(page) do
-      [] ->
-        {:error, :property_not_set}
-
-      [%{^value_atom => value}] ->
-        if value != nil do
-          {:ok, value}
-        else
-          {:error, :undefined_property}
-        end
+    with {:ok, %{^column => value}} <-
+           Repo.fetch_one(query, consistency: :quorum, error: :property_not_set) do
+      if value == nil do
+        {:error, :undefined_property}
+      else
+        {:ok, value}
+      end
     end
   end
 
@@ -102,51 +93,11 @@ defmodule Astarte.DataAccess.Data do
         path
       )
       when is_binary(device_id) and is_binary(path) do
-    XandraUtils.run(
-      realm,
-      &do_path_exists?(&1, &2, device_id, interface_descriptor, mapping, path)
-    )
-  end
-
-  defp do_path_exists?(conn, realm_name, device_id, interface_descriptor, mapping, path) do
-    # TODO: do not hardcode individual_properties here
-    statement = """
-    SELECT COUNT(*)
-    FROM #{realm_name}.#{@individual_properties_table}
-    WHERE device_id=:device_id AND interface_id=:interface_id
-      AND endpoint_id=:endpoint_id AND path=:path
-    """
-
-    params = %{
-      device_id: device_id,
-      interface_id: interface_descriptor.interface_id,
-      endpoint_id: mapping.endpoint_id,
-      path: path
-    }
-
-    with {:ok, %Xandra.Page{} = page} <-
-           XandraUtils.retrieve_page(conn, statement, params, consistency: :quorum),
-         {:ok, value} <- retrieve_path_count(page) do
-      case value do
-        0 ->
-          {:ok, false}
-
-        1 ->
-          {:ok, true}
-      end
-    end
-  end
-
-  defp retrieve_path_count(page) do
-    case Enum.to_list(page) do
-      [] ->
-        {:error, :property_not_set}
-
-      [%{count: nil}] ->
-        {:error, :undefined_property}
-
-      [%{count: value}] ->
-        {:ok, value}
+    fetch(realm, device_id, interface_descriptor, mapping, path)
+    |> Repo.aggregate(:count, consistency: :quorum)
+    |> case do
+      0 -> {:ok, false}
+      1 -> {:ok, true}
     end
   end
 
@@ -167,63 +118,26 @@ defmodule Astarte.DataAccess.Data do
         path
       )
       when is_binary(device_id) and is_binary(path) do
-    XandraUtils.run(
-      realm,
-      &do_fetch_last_path_update(&1, &2, device_id, interface_descriptor, mapping, path)
-    )
-  end
+    query =
+      fetch(realm, device_id, interface_descriptor, mapping, path)
+      |> select([:datetime_value, :reception_timestamp, :reception_timestamp_submillis])
 
-  defp do_fetch_last_path_update(
-         conn,
-         realm_name,
-         device_id,
-         interface_descriptor,
-         mapping,
-         path
-       ) do
-    # TODO: do not hardcode individual_properties here
-    statement = """
-    SELECT datetime_value, reception_timestamp, reception_timestamp_submillis
-    FROM #{realm_name}.#{@individual_properties_table}
-    WHERE device_id=:device_id AND interface_id=:interface_id
-      AND endpoint_id=:endpoint_id AND path=:path
-    """
+    with {:ok, last_update} <- Repo.fetch_one(query, error: :path_not_set) do
+      value_timestamp = last_update.datetime_value |> DateTime.truncate(:millisecond)
+      reception_timestamp = IndividualProperty.reception(last_update)
 
-    params = %{
-      device_id: device_id,
-      interface_id: interface_descriptor.interface_id,
-      endpoint_id: mapping.endpoint_id,
-      path: path
-    }
-
-    with {:ok, %Xandra.Page{} = page} <-
-           XandraUtils.retrieve_page(conn, statement, params, consistency: :quorum) do
-      retrieve_last_path_update(page)
+      {:ok, %{value_timestamp: value_timestamp, reception_timestamp: reception_timestamp}}
     end
   end
 
-  defp retrieve_last_path_update(page) do
-    case Enum.to_list(page) do
-      [] ->
-        {:error, :path_not_set}
-
-      [columns] ->
-        %{
-          reception_timestamp: reception_timestamp,
-          reception_timestamp_submillis: reception_timestamp_submillis,
-          datetime_value: datetime_value
-        } = columns
-
-        if is_integer(reception_timestamp) and is_integer(datetime_value) do
-          with {:ok, value_t} <- DateTime.from_unix(datetime_value, :millisecond),
-               reception_unix =
-                 reception_timestamp * 1000 + div(reception_timestamp_submillis || 0, 10),
-               {:ok, reception_t} <- DateTime.from_unix(reception_unix, :microsecond) do
-            {:ok, %{value_timestamp: value_t, reception_timestamp: reception_t}}
-          end
-        else
-          {:error, :invalid_result}
-        end
-    end
+  defp fetch(source \\ IndividualProperty, realm, device_id, interface_descriptor, mapping, path) do
+    from source,
+      prefix: ^realm,
+      where: [
+        device_id: ^device_id,
+        interface_id: ^interface_descriptor.interface_id,
+        endpoint_id: ^mapping.endpoint_id,
+        path: ^path
+      ]
   end
 end

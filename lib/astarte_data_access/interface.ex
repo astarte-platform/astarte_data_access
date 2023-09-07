@@ -19,41 +19,36 @@
 defmodule Astarte.DataAccess.Interface do
   require Logger
   alias Astarte.Core.InterfaceDescriptor
-  alias Astarte.DataAccess.XandraUtils
+  alias Astarte.DataAccess.Repo
+  alias Astarte.DataAccess.Realms.Interface
+  import Ecto.Query
 
-  @interface_row_default_selector "name, major_version, minor_version, interface_id, type, ownership, aggregation,
-  storage, storage_type, automaton_transitions, automaton_accepting_states"
+  @interface_row_default_selector [
+    :name,
+    :major_version,
+    :minor_version,
+    :interface_id,
+    :type,
+    :ownership,
+    :aggregation,
+    :storage,
+    :storage_type,
+    :automaton_transitions,
+    :automaton_accepting_states
+  ]
 
   @spec retrieve_interface_row(String.t(), String.t(), integer, keyword()) ::
           {:ok, keyword()} | {:error, atom}
   def retrieve_interface_row(realm, interface_name, major_version, opts \\ []) do
-    XandraUtils.run(
-      realm,
-      &do_retrieve_interface_row(&1, &2, interface_name, major_version, opts)
-    )
-  end
+    query =
+      from Interface,
+        prefix: ^realm,
+        where: [name: ^interface_name, major_version: ^major_version]
 
-  def do_retrieve_interface_row(conn, realm_name, interface_name, major_version, opts) do
-    selector = if opts[:include_docs], do: "*", else: @interface_row_default_selector
+    query =
+      if opts[:include_docs], do: query, else: select(query, ^@interface_row_default_selector)
 
-    statement = """
-    SELECT #{selector}
-    FROM #{realm_name}.interfaces
-    WHERE name=:name AND major_version=:major_version
-    """
-
-    params = %{
-      name: interface_name,
-      major_version: major_version
-    }
-
-    with {:ok, %Xandra.Page{} = page} <-
-           XandraUtils.retrieve_page(conn, statement, params) do
-      case Enum.to_list(page) do
-        [] -> {:error, :interface_not_found}
-        [row] -> {:ok, row}
-      end
-    end
+    Repo.fetch_one(query, error: :interface_not_found)
   end
 
   @spec fetch_interface_descriptor(String.t(), String.t(), non_neg_integer) ::
@@ -68,32 +63,14 @@ defmodule Astarte.DataAccess.Interface do
   @spec check_if_interface_exists(String.t(), String.t(), non_neg_integer) ::
           :ok | {:error, atom}
   def check_if_interface_exists(realm, interface_name, major_version) do
-    XandraUtils.run(
-      realm,
-      &do_check_if_interface_exists(&1, &2, interface_name, major_version)
-    )
-  end
+    query =
+      from Interface,
+        prefix: ^realm,
+        where: [name: ^interface_name, major_version: ^major_version]
 
-  defp do_check_if_interface_exists(conn, realm_name, interface_name, major_version) do
-    statement = """
-    SELECT COUNT(*)
-    FROM #{realm_name}.interfaces
-    WHERE name=:name AND major_version=:major_version
-    """
-
-    params = %{
-      name: interface_name,
-      major_version: major_version
-    }
-
-    with {:ok, %Xandra.Page{} = page} <- XandraUtils.retrieve_page(conn, statement, params) do
-      case Enum.to_list(page) do
-        [%{count: 1}] ->
-          :ok
-
-        [%{count: 0}] ->
-          {:error, :interface_not_found}
-      end
+    case Repo.aggregate(query, :count) do
+      1 -> :ok
+      0 -> {:error, :interface_not_found}
     end
   end
 end

@@ -18,37 +18,23 @@
 
 defmodule Astarte.DataAccess.Device do
   require Logger
-  alias Astarte.DataAccess.XandraUtils
   alias Astarte.Core.Device
+  alias Astarte.DataAccess.Repo
+  import Ecto.Query
 
   @spec interface_version(String.t(), Device.device_id(), String.t()) ::
           {:ok, integer} | {:error, atom}
   def interface_version(realm, device_id, interface_name) do
-    XandraUtils.run(realm, &do_interface_version(&1, &2, device_id, interface_name))
-  end
+    query =
+      from d in "devices",
+        prefix: ^realm,
+        where: d.device_id == ^device_id,
+        select: d.introspection
 
-  defp do_interface_version(conn, realm_name, device_id, interface_name) do
-    statement = """
-    SELECT introspection
-    FROM #{realm_name}.devices
-    WHERE device_id=:device_id
-    """
-
-    with {:ok, %Xandra.Page{} = page} <-
-           XandraUtils.retrieve_page(conn, statement, %{device_id: device_id}),
-         {:ok, introspection} <- retrieve_introspection(page),
+    with {:ok, introspection} <-
+           Repo.fetch_one(query, error: :device_not_found),
          {:ok, major} <- retrieve_major(introspection, interface_name) do
       {:ok, major}
-    end
-  end
-
-  defp retrieve_introspection(page) do
-    case Enum.to_list(page) do
-      [] ->
-        {:error, :device_not_found}
-
-      [%{introspection: introspection}] ->
-        {:ok, introspection}
     end
   end
 

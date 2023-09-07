@@ -71,8 +71,9 @@ defmodule Astarte.DataAccess.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:xandra, "~> 0.11"},
+      {:xandra, "~> 0.17"},
       {:cqex, "~> 1.0"},
+      {:exandra, "~> 0.9"},
       {:skogsra, "~> 2.2"},
       {:excoveralls, "~> 0.15", only: :test},
       {:castore, "~> 0.1.0"},

@@ -1,0 +1,10 @@
+defmodule Astarte.DataAccess.Realms.Name do
+  use Ecto.Schema
+
+  @primary_key false
+  schema "names" do
+    field :object_name, :string, primary_key: true
+    field :object_type, :integer, primary_key: true
+    field :object_uuid, Ecto.UUID
+  end
+end
