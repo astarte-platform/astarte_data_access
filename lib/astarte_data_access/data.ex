@@ -45,48 +45,36 @@ defmodule Astarte.DataAccess.Data do
         path
       )
       when is_binary(device_id) and is_binary(path) do
-    XandraUtils.run(
-      realm,
-      &do_fetch_property(&1, &2, device_id, interface_descriptor, mapping, path)
-    )
-  end
+    # String.to_existing_atom doesn't work as... the atom doesn't exist
+    # Maybe CQLUtils could expose a `type_to_db_column_atom`?
+    column =
+      mapping.value_type
+      |> CQLUtils.type_to_db_column_name()
+      |> String.to_atom()
 
-  defp do_fetch_property(conn, realm_name, device_id, interface_descriptor, mapping, path) do
-    value_column = CQLUtils.type_to_db_column_name(mapping.value_type)
+    # FIXME: cassandra complains it doesn't know a "castAsUuid" function,
+    # but the ids are correctly casted as UUIDs in the query, which doesn't happen setting type to "string".
+    # Perhaps an exandra issue?
 
-    statement = """
-    SELECT #{value_column}
-    FROM #{realm_name}."#{interface_descriptor.storage}"
-    WHERE device_id=:device_id AND interface_id=:interface_id
-      AND endpoint_id=:endpoint_id AND path=:path
-    """
+    # TODO: add typing to fetch/6 and use that once this is sorted out
+    query =
+      from interface_descriptor.storage,
+        prefix: ^realm,
+        where: [
+          device_id: type(^device_id, Ecto.UUID),
+          interface_id: type(^interface_descriptor.interface_id, Ecto.UUID),
+          endpoint_id: type(^mapping.endpoint_id, Ecto.UUID),
+          path: type(^path, :string)
+        ],
+        select: [^column]
 
-    params = %{
-      device_id: device_id,
-      interface_id: interface_descriptor.interface_id,
-      endpoint_id: mapping.endpoint_id,
-      path: path
-    }
-
-    with {:ok, %Xandra.Page{} = page} <-
-           XandraUtils.retrieve_page(conn, statement, params, consistency: :quorum) do
-      retrieve_property_value(page, value_column)
-    end
-  end
-
-  defp retrieve_property_value(%Xandra.Page{} = page, value_column) do
-    value_atom = String.to_existing_atom(value_column)
-
-    case Enum.to_list(page) do
-      [] ->
-        {:error, :property_not_set}
-
-      [%{^value_atom => value}] ->
-        if value != nil do
-          {:ok, value}
-        else
-          {:error, :undefined_property}
-        end
+    with {:ok, %{^column => value}} <-
+           Repo.fetch_one(query, consistency: :quorum, error: :property_not_set) do
+      if value == nil do
+        {:error, :undefined_property}
+      else
+        {:ok, value}
+      end
     end
   end
 
