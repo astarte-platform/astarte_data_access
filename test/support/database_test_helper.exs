@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2017 Ispirata Srl
+# Copyright 2017 - 2025 SECO Mind Srl
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ defmodule Astarte.DataAccess.DatabaseTestHelper do
         aliases map<ascii, varchar>,
         introspection map<ascii, int>,
         introspection_minor map<ascii, int>,
+        old_introspection map<frozen<tuple<ascii, int>>, int>,
         protocol_revision int,
         first_registration timestamp,
         credentials_secret ascii,
@@ -63,8 +64,13 @@ defmodule Astarte.DataAccess.DatabaseTestHelper do
         pending_empty_cache boolean,
         total_received_msgs bigint,
         total_received_bytes bigint,
+        exchanged_bytes_by_interface map<frozen<tuple<ascii, int>>, bigint>,
+        exchanged_msgs_by_interface map<frozen<tuple<ascii, int>>, bigint>,
         last_credentials_request_ip inet,
         last_seen_ip inet,
+        attributes map<varchar, varchar>,
+
+        groups map<text, timeuuid>,
 
         PRIMARY KEY (device_id)
       );
