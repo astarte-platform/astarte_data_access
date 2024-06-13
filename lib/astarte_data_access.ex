@@ -28,12 +28,12 @@ defmodule Astarte.DataAccess do
   def init(init_arg) do
     xandra_options =
       Keyword.fetch!(init_arg, :xandra_options)
-      |> Keyword.put(:name, :astarte_data_access_xandra)
       # TODO move to string keys
       |> Keyword.put(:atom_keys, true)
 
     children = [
-      {Xandra.Cluster, xandra_options}
+      {Xandra.Cluster, xandra_options},
+      Astarte.DataAccess.Repo
     ]
 
     opts = [strategy: :one_for_one, name: Astarte.DataAccess.Supervisor]

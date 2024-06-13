@@ -27,7 +27,7 @@ defmodule Astarte.DataAccess.XandraUtils do
           any | {:error, :invalid_realm_name}
   def run(realm, fun) do
     with :ok <- verify_realm(realm) do
-      keyspace = CQLUtils.realm_name_to_keyspace_name(realm, Config.astarte_instance_id!())
+      keyspace = realm_name_to_keyspace_name(realm)
 
       Xandra.Cluster.run(:astarte_data_access_xandra, &fun.(&1, keyspace))
     end
@@ -66,6 +66,11 @@ defmodule Astarte.DataAccess.XandraUtils do
           {:ok, page}
       end
     end
+  end
+
+  @spec realm_name_to_keyspace_name(String.t()) :: String.t()
+  def realm_name_to_keyspace_name(realm_name) do
+    CQLUtils.realm_name_to_keyspace_name(realm_name, Config.astarte_instance_id!())
   end
 
   defp prepare_query(conn, statement, opts \\ []) do

@@ -18,47 +18,46 @@
 
 defmodule Astarte.DataAccess.Device do
   require Logger
+  alias Astarte.Core.Device, as: DeviceCore
+  alias Astarte.DataAccess.Realms.Device
+  alias Astarte.DataAccess.Repo
   alias Astarte.DataAccess.XandraUtils
-  alias Astarte.Core.Device
+  alias Ecto.UUID
 
-  @spec interface_version(String.t(), Device.device_id(), String.t()) ::
+  import Ecto.Query
+
+  @spec interface_version(String.t(), DeviceCore.device_id(), String.t()) ::
           {:ok, integer} | {:error, atom}
   def interface_version(realm, device_id, interface_name) do
-    XandraUtils.run(realm, &do_interface_version(&1, &2, device_id, interface_name))
-  end
-
-  defp do_interface_version(conn, keyspace_name, device_id, interface_name) do
-    statement = """
-    SELECT introspection
-    FROM #{keyspace_name}.devices
-    WHERE device_id=:device_id
-    """
-
-    with {:ok, %Xandra.Page{} = page} <-
-           XandraUtils.retrieve_page(conn, statement, %{device_id: device_id}),
-         {:ok, introspection} <- retrieve_introspection(page),
-         {:ok, major} <- retrieve_major(introspection, interface_name) do
+    with {:ok, device_id} <- cast_device_id(device_id),
+         {:ok, device} <-
+           introspection_query(realm, device_id)
+           |> Repo.fetch_one(error: :device_not_found),
+         {:ok, major} <- retrieve_major(device.introspection, interface_name) do
       {:ok, major}
     end
   end
 
-  defp retrieve_introspection(page) do
-    case Enum.to_list(page) do
-      [] ->
-        {:error, :device_not_found}
-
-      # We're here if the device has been registered but has not declared its introspection yet
-      [%{introspection: nil}] ->
-        {:ok, %{}}
-
-      [%{introspection: introspection}] ->
-        {:ok, introspection}
+  defp retrieve_major(introspection, interface_name) do
+    case introspection do
+      %{^interface_name => major} -> {:ok, major}
+      _else -> {:error, :interface_not_in_introspection}
     end
   end
 
-  defp retrieve_major(introspection, interface_name) do
-    with :error <- Map.fetch(introspection, interface_name) do
-      {:error, :interface_not_in_introspection}
+  defp introspection_query(realm, device_id) do
+    keyspace = XandraUtils.realm_name_to_keyspace_name(realm)
+
+    from Device,
+      prefix: ^keyspace,
+      where: [device_id: ^device_id],
+      select: [:introspection]
+  end
+
+  defp cast_device_id(device_id) do
+    case UUID.cast(device_id) do
+      {:ok, device_id} -> {:ok, device_id}
+      :error -> {:error, :invalid_device_id}
     end
   end
 end
