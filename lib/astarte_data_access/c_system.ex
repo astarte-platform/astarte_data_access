@@ -16,7 +16,8 @@
 # limitations under the License.
 #
 
-defmodule CSystem do
+defmodule Astarte.DataAccess.CSystem do
+  alias Astarte.DataAccess.XandraUtils
   @agreement_sleep_millis 200
 
   def run_with_schema_agreement(conn, opts \\ [], fun) when is_function(fun) do
@@ -42,11 +43,13 @@ defmodule CSystem do
       {:ok, _versions} ->
         millis = min(timeout, @agreement_sleep_millis)
 
-        if millis == 0 do
-          {:error, :timeout}
-        else
-          Process.sleep(millis)
-          wait_schema_agreement(conn, timeout - millis)
+        case millis do
+          0 ->
+            {:error, :timeout}
+
+          _ ->
+            Process.sleep(millis)
+            wait_schema_agreement(conn, timeout - millis)
         end
 
       any_other ->
@@ -62,12 +65,17 @@ defmodule CSystem do
   end
 
   def query_peers_schema_versions(conn) do
-    query = "SELECT schema_version FROM system.peers"
+    query = """
+    SELECT
+      schema_version
+    FROM
+      system.peers
+    """
 
-    with {:ok, res} <- Xandra.execute(conn, query, %{}, consistency: :one) do
+    with {:ok, res} <- XandraUtils.execute_query(conn, query, consistency: :one) do
       schema_versions =
         res
-        |> Stream.map(&Map.fetch!(&1, "schema_version"))
+        |> Stream.map(&Map.fetch!(&1, :schema_version))
         |> Stream.uniq()
         |> Enum.to_list()
 
@@ -76,14 +84,20 @@ defmodule CSystem do
   end
 
   def query_local_schema_version(conn) do
-    query = "SELECT schema_version FROM system.local WHERE key='local'"
+    query = """
+    SELECT
+      schema_version
+    FROM
+      system.local
+    WHERE key = 'local'
+    """
 
-    with {:ok, res} <- Xandra.execute(conn, query, %{}, consistency: :one) do
+    with {:ok, res} <- XandraUtils.execute_query(conn, query, consistency: :one) do
       schema_version =
         res
         |> Enum.take(1)
         |> List.first()
-        |> Map.fetch!("schema_version")
+        |> Map.fetch!(:schema_version)
 
       {:ok, schema_version}
     end
@@ -91,9 +105,12 @@ defmodule CSystem do
 
   def execute_schema_change(conn, query) do
     result =
-      CSystem.run_with_schema_agreement(conn, fn ->
-        Xandra.execute(conn, query, %{}, consistency: :each_quorum, timeout: 60_000)
-      end)
+      run_with_schema_agreement(
+        conn,
+        fn ->
+          XandraUtils.execute_query(conn, query, consistency: :each_quorum, timeout: 60_000)
+        end
+      )
 
     case result do
       {:error, :timeout} ->
