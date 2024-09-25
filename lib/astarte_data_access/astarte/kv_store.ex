@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2017 - 2025 SECO Mind Srl
+# Copyright 2025 SECO Mind Srl
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 # limitations under the License.
 #
 
-# This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
-import Config
+defmodule Astarte.DataAccess.Astarte.KvStore do
+  use TypedEctoSchema
 
-config :astarte_data_access, ecto_repos: [Astarte.DataAccess.Repo]
-
-config :astarte_data_access, Astarte.DataAccess.Repo, sync_connect: 5000
-
-import_config "#{config_env()}.exs"
+  @primary_key false
+  typed_schema "kv_store" do
+    field :group, :string, primary_key: true
+    field :key, :string, primary_key: true
+    field :value, :binary
+  end
+end

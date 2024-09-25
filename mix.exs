@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2017-2022 Ispirata Srl
+# Copyright 2017 - 2025 SECO Mind Srl
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -74,7 +74,8 @@ defmodule Astarte.DataAccess.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:xandra, "~> 0.11"},
+      {:exandra, "~> 0.13"},
+      {:typed_ecto_schema, "~> 0.4"},
       {:cqex, "~> 1.0"},
       # Forcing latest cqerl version
       {:cqerl, "~> 2.1", override: true},
