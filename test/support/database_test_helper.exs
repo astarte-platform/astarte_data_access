@@ -516,4 +516,17 @@ defmodule Astarte.DataAccess.DatabaseTestHelper do
     Xandra.execute(conn, "DROP KEYSPACE autotestrealm;")
     :ok
   end
+
+  def await_cluster_connected!(cluster, tries \\ 10) do
+    fun = &Xandra.execute!(&1, "SELECT * FROM system.local")
+
+    with {:error, %Xandra.ConnectionError{}} <- Xandra.Cluster.run(cluster, _options = [], fun) do
+      if tries > 0 do
+        Process.sleep(100)
+        await_cluster_connected!(cluster, tries - 1)
+      else
+        raise("Connection to the cluster failed")
+      end
+    end
+  end
 end
