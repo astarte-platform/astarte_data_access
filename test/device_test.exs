@@ -83,8 +83,8 @@ defmodule Astarte.DataAccess.Device.XandraTest do
       Xandra.Cluster.prepare!(:astarte_data_access_xandra, insert_empty_introspection_stmt)
 
     Xandra.Cluster.execute!(:astarte_data_access_xandra, prepared, %{
-      device_id: device_id,
-      empty_introspection: %{}
+      "device_id" => device_id,
+      "empty_introspection" => %{}
     })
 
     assert Device.interface_version(
