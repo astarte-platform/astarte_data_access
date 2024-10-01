@@ -19,8 +19,16 @@
 defmodule Astarte.DataAccess.Astarte.Realm do
   use TypedEctoSchema
 
+  alias Astarte.Core.CQLUtils
+  alias Astarte.DataAccess.Config
+
   @primary_key {:realm_name, :string, autogenerate: false}
   typed_schema "realms" do
     field :device_registration_limit, :integer
+  end
+
+  @spec keyspace_name(String.t()) :: String.t()
+  def keyspace_name(realm_name) do
+    CQLUtils.realm_name_to_keyspace_name(realm_name, Config.astarte_instance_id!())
   end
 end
