@@ -43,4 +43,14 @@ defmodule Astarte.DataAccess.Realms.IndividualProperty do
     field :binaryblobarray_value, {:array, :binary}
     field :datetimearray_value, {:array, :utc_datetime_usec}
   end
+
+  def reception(individual_property) do
+    nanos =
+      individual_property.reception_timestamp_submillis
+      |> Kernel.||(0)
+      |> Kernel.*(100)
+
+    individual_property.reception_timestamp
+    |> DateTime.add(nanos, :nanosecond)
+  end
 end
