@@ -60,5 +60,9 @@ defmodule Astarte.DataAccess.Realms.Device do
     field :protocol_revision, :integer
     field :total_received_bytes, :integer
     field :total_received_msgs, :integer
+
+    field :purge_properties_compression_format, Ecto.Enum,
+      values: [zlib: 0, plaintext: 1],
+      default: :zlib
   end
 end
