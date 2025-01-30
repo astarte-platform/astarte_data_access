@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2018 - 2024 SECO Mind Srl
+# Copyright 2018 - 2025 SECO Mind Srl
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ defmodule Astarte.DataAccess.Database do
         {:error, :database_connection_error}
 
       any_error ->
-        Logger.warn("Failed connection to the database. Reason: #{inspect(any_error)}")
+        Logger.warning("Failed connection to the database. Reason: #{inspect(any_error)}")
         {:error, :database_connection_error}
     end
   end
