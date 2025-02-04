@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2023 - 2025 SECO Mind Srl
+# Copyright 2025 SECO Mind Srl
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,23 +16,18 @@
 # limitations under the License.
 #
 
-defmodule Astarte.DataAccess do
-  # Automatically defines child_spec/1
-  use Supervisor
+defmodule Astarte.DataAccess.Astarte.Realm do
+  use TypedEctoSchema
 
-  def start_link(init_arg) do
-    Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)
+  alias Astarte.Core.CQLUtils
+  alias Astarte.DataAccess.Config
+
+  @primary_key {:realm_name, :string, autogenerate: false}
+  typed_schema "realms" do
   end
 
-  @impl true
-  def init(init_arg) do
-    xandra_options = Keyword.fetch!(init_arg, :xandra_options)
-
-    children = [
-      {Astarte.DataAccess.Repo, xandra_options}
-    ]
-
-    opts = [strategy: :one_for_one, name: Astarte.DataAccess.Supervisor]
-    Supervisor.init(children, opts)
+  @spec keyspace_name(String.t()) :: String.t()
+  def keyspace_name(realm_name) do
+    CQLUtils.realm_name_to_keyspace_name(realm_name, Config.astarte_instance_id!())
   end
 end
