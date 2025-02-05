@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Added `Realm` entity to manipulate
+  all `realm` features (CRUD)
+
+### Added
 - Add the `ASTARTE_INSTANCE_ID` env to allow sharing
   the database between multiple Astarte instances.
   Default to `""` to maintain backward compatibility.
