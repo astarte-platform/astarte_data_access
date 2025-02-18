@@ -165,7 +165,7 @@ defmodule Astarte.DataAccess.Config do
     }
   end
 
-  @spec xandra_options!() :: Xandra.start_options()
+  @spec xandra_options!() :: [Xandra.start_option()]
   def xandra_options! do
     [
       nodes: xandra_nodes!(),
