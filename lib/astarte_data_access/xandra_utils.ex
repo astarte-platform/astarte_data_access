@@ -25,6 +25,35 @@ defmodule Astarte.DataAccess.XandraUtils do
 
   @cluster_default_name :astarte_data_access_xandra
 
+  @xandra_prepare_opts [
+    :compressor,
+    :force,
+    :tracing,
+    :custom_payload,
+    :telemetry_metadata,
+    :timeout
+  ]
+
+  @xandra_exec_opts [
+    :consistency,
+    :page_size,
+    :paging_state,
+    :timestamp,
+    :serial_consistency,
+    :compressor,
+    :retry_strategy,
+    :tracing,
+    :custom_payload,
+    :date_format,
+    :time_format,
+    :timestamp_format,
+    :decimal_format,
+    :uuid_format,
+    :timeuuid_format,
+    :telemetry_metadata,
+    :timeout
+  ]
+
   def verify_realm_name(realm_name) do
     if Realm.valid_name?(realm_name) do
       :ok
@@ -87,6 +116,8 @@ defmodule Astarte.DataAccess.XandraUtils do
     opts = Keyword.merge(default_query_opts(), opts)
 
     with {:ok, prepared} <- prepare_query(conn, query, opts) do
+      opts = Keyword.take(opts, @xandra_exec_opts)
+
       case Xandra.execute(conn, prepared, params, opts) do
         {:ok, result} ->
           {:ok, result}
@@ -125,6 +156,8 @@ defmodule Astarte.DataAccess.XandraUtils do
   end
 
   defp prepare_query(conn, statement, opts) do
+    opts = Keyword.take(opts, @xandra_prepare_opts)
+
     case Xandra.prepare(conn, statement, opts) do
       {:ok, %Xandra.Prepared{} = prepared} ->
         {:ok, prepared}
