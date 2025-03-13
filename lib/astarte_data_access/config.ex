@@ -106,7 +106,7 @@ defmodule Astarte.DataAccess.Config do
   @envdoc """
   Discover nodes in the same cluster as specified in CASSANDRA_NODES. If your Cassandra
   instance is outside of your network, enabling the autodiscovery leads to connection failures.
-  Defaults to false.
+  This option is deprecated and will be ignored.
   """
   app_env :autodiscovery_enabled, :astarte_data_access, :autodiscovery_enabled,
     os_env: "CASSANDRA_AUTODISCOVERY_ENABLED",
@@ -165,14 +165,13 @@ defmodule Astarte.DataAccess.Config do
     }
   end
 
-  @spec xandra_options!() :: Xandra.start_options()
+  @spec xandra_options!() :: [Xandra.start_option()]
   def xandra_options! do
     [
       nodes: xandra_nodes!(),
       authentication: xandra_authentication_options!(),
       pool_size: pool_size!(),
-      encryption: ssl_enabled!(),
-      autodiscovery: autodiscovery_enabled!()
+      encryption: ssl_enabled!()
     ]
     |> populate_xandra_ssl_options()
   end
