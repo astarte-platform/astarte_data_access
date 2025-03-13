@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2023 - 2025 SECO Mind Srl
+# Copyright 2025 SECO Mind Srl
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,23 +16,13 @@
 # limitations under the License.
 #
 
-defmodule Astarte.DataAccess do
-  # Automatically defines child_spec/1
-  use Supervisor
+defmodule Astarte.DataAccess.Astarte.KvStore do
+  use TypedEctoSchema
 
-  def start_link(init_arg) do
-    Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)
-  end
-
-  @impl true
-  def init(init_arg) do
-    xandra_options = Keyword.fetch!(init_arg, :xandra_options)
-
-    children = [
-      {Astarte.DataAccess.Repo, xandra_options}
-    ]
-
-    opts = [strategy: :one_for_one, name: Astarte.DataAccess.Supervisor]
-    Supervisor.init(children, opts)
+  @primary_key false
+  typed_schema "kv_store" do
+    field :group, :string, primary_key: true
+    field :key, :string, primary_key: true
+    field :value, :binary
   end
 end
