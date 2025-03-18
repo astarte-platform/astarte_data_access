@@ -29,7 +29,10 @@ defmodule Astarte.DataAccess.DateTime do
 
   @spec load(t() | any()) :: {:ok, t()} | :error
   def load(%DateTime{} = datetime), do: {:ok, datetime}
-  def load(timestamp) when is_integer(timestamp), do: {:ok, DateTime.from_unix!(timestamp)}
+
+  def load(timestamp) when is_integer(timestamp),
+    do: {:ok, DateTime.from_unix!(timestamp, :millisecond)}
+
   def load(_other), do: :error
 
   # xandra accepts both integers and datetimes, it can do the job for us
