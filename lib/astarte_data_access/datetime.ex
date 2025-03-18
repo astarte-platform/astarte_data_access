@@ -21,6 +21,7 @@ defmodule Astarte.DataAccess.DateTime do
   Ecto type for DateTimes with millisecond precision.
   """
   use Ecto.Type
+  alias Astarte.Core.DecimicrosecondDateTime
 
   @type t :: DateTime.t()
 
@@ -29,6 +30,7 @@ defmodule Astarte.DataAccess.DateTime do
 
   @spec load(t() | any()) :: {:ok, t()} | :error
   def load(%DateTime{} = datetime), do: {:ok, datetime}
+  def load(%DecimicrosecondDateTime{} = datetime), do: {:ok, datetime.datetime}
 
   def load(timestamp) when is_integer(timestamp),
     do: {:ok, DateTime.from_unix!(timestamp, :millisecond)}
@@ -39,18 +41,29 @@ defmodule Astarte.DataAccess.DateTime do
   @spec dump(t() | any()) :: {:ok, t()} | :error
   def dump(%DateTime{} = datetime), do: {:ok, datetime}
   def dump(timestamp) when is_integer(timestamp), do: {:ok, timestamp}
+
+  def dump(%DecimicrosecondDateTime{} = datetime),
+    do: {:ok, DecimicrosecondDateTime.to_unix(datetime, :millisecond)}
+
   def dump(_other), do: :error
 
   @spec cast(t() | any()) :: {:ok, t()} | :error
   def cast(datetime_or_timestamp_or_any), do: load(datetime_or_timestamp_or_any)
 
-  def split_submillis(timestamp) do
-    timestamp_ms = DateTime.truncate(timestamp, :millisecond)
-    submillis = timestamp |> DateTime.to_unix(:microsecond) |> rem(1000)
+  def split_submillis(datetime = %DateTime{}) do
+    timestamp_ms = DateTime.truncate(datetime, :millisecond)
+    submillis = datetime |> DateTime.to_unix(:microsecond) |> rem(1000)
     # `DateTime`s are microsecond precision, individual_properties's submillis
     # have one extra digit. Keep the unit consistent with DUP
     decimicrosecond_submillis = submillis * 10
 
     {timestamp_ms, decimicrosecond_submillis}
+  end
+
+  def split_submillis(datetime = %DecimicrosecondDateTime{}) do
+    timestamp_ms = DecimicrosecondDateTime.to_unix(datetime, :millisecond)
+    submillis = DecimicrosecondDateTime.to_unix(datetime, :decimicrosecond) |> rem(10000)
+
+    {timestamp_ms, submillis}
   end
 end
