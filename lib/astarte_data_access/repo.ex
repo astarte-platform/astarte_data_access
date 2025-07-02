@@ -225,7 +225,8 @@ defmodule Astarte.DataAccess.Repo do
     # `fetch_one` is safe as we're limiting to 1 here, it should not raise
     case fetch_one(queryable, opts) do
       {:ok, _} -> {:ok, true}
-      {:error, _} -> {:ok, false}
+      {:error, :not_found} -> {:ok, false}
+      other_error -> other_error
     end
   end
 
