@@ -22,6 +22,7 @@ defmodule Astarte.DataAccess.Repo do
   @moduledoc false
   use Ecto.Repo, otp_app: :astarte_data_access, adapter: Exandra
   alias Astarte.DataAccess.Config
+  alias Astarte.DataAccess.Realms.Realm
   require Ecto.Query
   require Logger
 
@@ -189,9 +190,14 @@ defmodule Astarte.DataAccess.Repo do
   end
 
   defp handle_database_error(%Xandra.Error{} = error) do
+    astarte_keyspace = Realm.astarte_keyspace_name()
     %Xandra.Error{message: message} = error
 
     case Regex.run(~r/Keyspace (.*) does not exist/, message) do
+      [_message, ^astarte_keyspace] ->
+        Logger.warning("Database error: astarte keyspace does not exist", tag: "database_error")
+        {:error, :database_error}
+
       [_message, keyspace] ->
         Logger.warning("Keyspace #{keyspace} does not exist.",
           tag: "realm_not_found"

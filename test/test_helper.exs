@@ -1,4 +1,5 @@
 Mimic.copy(Xandra)
+Mimic.copy(Astarte.DataAccess.Realms.Realm)
 ExUnit.start(capture_log: true)
 
 children = [
