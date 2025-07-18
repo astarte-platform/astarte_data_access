@@ -216,6 +216,8 @@ defmodule Astarte.DataAccess.Repo do
     end
   end
 
+  defp handle_database_error(error), do: {:error, error}
+
   @doc """
   Reimplementation of `exists?` from Ecto, without using `select(1)` as scylla does not support it.
   """
