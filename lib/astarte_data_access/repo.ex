@@ -116,12 +116,7 @@ defmodule Astarte.DataAccess.Repo do
   end
 
   def fetch_all(queryable, opts \\ []) do
-    try do
-      {:ok, all(queryable, opts)}
-    rescue
-      error ->
-        handle_database_error(error)
-    end
+    safe_wrap(fn -> all(queryable, opts) end)
   end
 
   def fetch_one(queryable, opts \\ []) do
@@ -135,39 +130,19 @@ defmodule Astarte.DataAccess.Repo do
   end
 
   def safe_fetch_one(queryable, opts \\ []) do
-    try do
-      fetch_one(queryable, opts)
-    rescue
-      error ->
-        handle_database_error(error)
-    end
+    safe_wrap(fn -> fetch_one(queryable, opts) end)
   end
 
   def safe_insert_all(source, entries, opts \\ []) do
-    try do
-      {:ok, insert_all(source, entries, opts)}
-    rescue
-      error ->
-        handle_database_error(error)
-    end
+    safe_wrap(fn -> insert_all(source, entries, opts) end)
   end
 
   def safe_update_all(queryable, updates, opts \\ []) do
-    try do
-      {:ok, update_all(queryable, updates, opts)}
-    rescue
-      error ->
-        handle_database_error(error)
-    end
+    safe_wrap(fn -> update_all(queryable, updates, opts) end)
   end
 
   def safe_delete_all(queryable, opts \\ []) do
-    try do
-      {:ok, delete_all(queryable, opts)}
-    rescue
-      error ->
-        handle_database_error(error)
-    end
+    safe_wrap(fn -> delete_all(queryable, opts) end)
   end
 
   defp handle_database_error(%Xandra.ConnectionError{} = error) do
@@ -266,5 +241,14 @@ defmodule Astarte.DataAccess.Repo do
     raise Ecto.QueryError,
       query: query,
       message: "expected a from expression with a schema"
+  end
+
+  defp safe_wrap(f) do
+    try do
+      {:ok, f.()}
+    rescue
+      error ->
+        handle_database_error(error)
+    end
   end
 end
