@@ -137,6 +137,10 @@ defmodule Astarte.DataAccess.Repo do
     safe_wrap(fn -> insert_all(source, entries, opts) end)
   end
 
+  def safe_update(changeset, opts \\ []) do
+    safe_wrap(fn -> update(changeset, opts) end)
+  end
+
   def safe_update_all(queryable, updates, opts \\ []) do
     safe_wrap(fn -> update_all(queryable, updates, opts) end)
   end
