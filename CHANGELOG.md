@@ -4,11 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] 2025-03-17
+## [1.2.1-rc.0] - 2025-08-22
+### Added
+- Ecto schemas for Astarte database resources and a repo with common functionality
+- Functions to perform database schema changes
 
 ### Changed
 - BREAKING: Removed XandraUtils module because it's not 
   needed anymore inside the main Astarte project
+- Removed deprecated `CASSANDRA_AUTODISCOVERY_ENABLED`, which is now always enabled
 - Changed the database driver from CQEx (unmantained) to Exandra
 
 ## [1.2.0] 2024-07-01
